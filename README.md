@@ -2,7 +2,7 @@
 
 MiniChecker is a tool for detecting abusive data permission request (ADPR) behaviors in mini-programs.
 
-We implented MiniChecker base on *Sparrow*  (from [Code-Fuse](https://github.com/codefuse-ai/CodeFuse-Query)).
+We implented MiniChecker base on *Sparrow*  (from [Code-Fuse] github.codefuse-ai.CodeFuse-Query).
 
 **In adherence to data confidentiality requirements and public review mechanisms, util December 16, 2023, MiniChecker has not yet open all of its codes. The code and samples are presently undergoing a confidentiality review and will be released to the public upon the conclusion of the review process.**
 
