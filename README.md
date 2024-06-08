@@ -27,6 +27,7 @@ We implented MiniChecker base on *Codefuse-Query*  (from [Code-Fuse] github.code
 * checker-local.py: main script using *Python* to compute and match the features of different risks
 * util.py: self-defined library function
 * checker-patch.py: script for patch analsis
+* compare: comparative experiment
 
 ## Benchmark
 
