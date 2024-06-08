@@ -1,7 +1,4 @@
 # 此文件用于分析是否存在弹窗相关违规问题
-# 2024-03-19 优化方法，改投ASE
-# 2023-12-11 进一步优化分析方法，改进实验，改投ISSTA
-# 2023-09-18 明确了弹窗重复的分析方法，FSE投稿
 
 import os
 import json
@@ -13,10 +10,10 @@ import copy
 import sys
 import tqdm
 
-basePath = "/Users/xjtu-soft/Application/data/raw-data/ase25a"
-sparrowPath = "/Users/xjtu-soft/Application/sparrow-cli-server/sparrow"
-# outputPath = "/Users/xjtu-soft/Application/data/raw-data/ase25b"
-queryScriptPath = "/Users/xjtu-soft/Application/script/static/ASEBasicQuery.gdl"
+basePath = "..."
+sparrowPath = "..."
+# outputPath = "..."
+queryScriptPath = "..."
 
 class App:
     def __init__(self, id, dist="", db="", output="") -> None:
@@ -39,7 +36,6 @@ class App:
     
     def generateDB(self):
         if 1:
-            # database create -t=javascript,xml -s=/Users/xjtu-soft/Application/data/nan-cycle/dist -log=ALL /Users/xjtu-soft/Application/data/nan-cycle/db
             os.system(" ".join([sparrowPath, "database", "create", "-t=javascript,xml","-s=%s"%self.absolutePath,"-log=ALL",self.dbPath]))
         
     def runQuery(self):
@@ -291,6 +287,7 @@ class App:
 
         open(os.path.join(self.outputPath, "debug-%s.txt" % self.appID), "a").write(outputPopupInfo)
 
+
     def getFirstPagePopUp(self):
         for alp in self.appLaunchPopUpList:
             # 小程序启动时弹窗
@@ -476,6 +473,7 @@ class App:
                 }
                 self.risks.append(overlayRisk)
                 self.riskCount["overlay"] += 1
+    
     def getContinuousPopUpWhilePageLoad(self, taintList):
         # 为每个页面创建一个对象
         pageList = []
@@ -906,8 +904,8 @@ class App:
 
 # if __name__ == "__main__":
 #     app = App(
-#         dist="/Users/xjtu-soft/Application/script/test/dist",
-#         db="/Users/xjtu-soft/Application/script/test/dist/db")
+#         dist="...",
+#         db="...")
 #     app.generateDB()
 #     app.runQuery()
 #     app.queryPopUpRisk()
