@@ -190,6 +190,7 @@ def getAuthorizeCategoryByCallName(callName):
     
     return "none"
 
+
 def buildFunctionReference(queryResult, absolutePath, exceptFileList = []):
     funcReferences = queryResult["queryFunctionContainsCall"]
     thisReferences = queryResult["queryThisKeywordRelatedCall"]
@@ -283,8 +284,7 @@ def buildFunctionReference(queryResult, absolutePath, exceptFileList = []):
                 })
 
                 funcEdgeCounter["module"] += 1
-                
-                        # 没有找到同名定义，查看是否为export default，可对方法重命名型导入
+        # 没有找到同名定义，查看是否为export default，可对方法重命名型导入
         isExportDefault, exportDefindIds = getExportDefaultDefineId(exportReferences=expReferences, funcPath=importPath, funcNodes=funcNodes)
         # if ir["importMethod"] == "auth":
         #     print("--->",isExportDefault, exportDefindIds)
@@ -351,7 +351,7 @@ def getEdgeById(id, edges):
     for e in edges:
         if e["edgeId"] == id:
             return e
-        
+
 def getNodeByCallId(id, nodes):
     for n in nodes:
         if n["callId"] == id:
@@ -427,7 +427,8 @@ def taintSpread(nodes, edges, taintTypes):
 
             # if remainingTime > 60 * 30:
             #     raise RuntimeError("Time Cost > 30 min.")
-            
+
+
             if n[keyTainted]:
                 # print("begin node at", n)
                 waitForVisitEdgeIdList = n["edgesFromThisNode"]
@@ -499,7 +500,7 @@ def taintSpreadByWarshall(nodes, edges, taintTypes):
                 tempMatrix[i][j] = adjacentMatrix[i][j] | (adjacentMatrix[i][k] & adjacentMatrix[k][j])
     
         adjacentMatrix = tempMatrix.copy()
-        
+
     tqdmBarB.close()
 
     # 返回临接矩阵运算结果（未完成）
@@ -690,9 +691,8 @@ def findPathFromRouteGraph(nodes, edges, start, end):
                          visitedEdge=[])
     
     formatRes = []
-    
     for i, r in enumerate(res):
-    # print("---Path: %s/%s---" % (i, len(res)))
+        # print("---Path: %s/%s---" % (i, len(res)))
         formatPath = []
         for j, n in enumerate(r):
             formatPagePath = getPathByNodeId(id = n["nodeId"], nodes = nodes)
@@ -772,8 +772,8 @@ def updateBranchInfo(queryResult):
         n["branch"] = []
         if n["callId"] in branchInfoInNodes:
             n["branch"] = branchInfoInNodes[n["callId"] ]
-            
-                # for n in nodes:
+
+    # for n in nodes:
     #     n["branch"] = []
 
     # for n in nodes:
@@ -868,7 +868,7 @@ def DFSFindLoop(nodes, edges, endNodeId, curNodeId, curPath, resPath, visitedNod
                     })
                     DFSFindLoop(nodes, edges, endNodeId, n, curPath, resPath, visitedNode, visitedEdge)
                     curPath.pop()
-                    
+
 def isFailCallbackUpdateBranch(failCallback, branches):
     update = False
     for b in branches:
