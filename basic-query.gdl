@@ -2,9 +2,6 @@
 use coref::javascript::*
 use coref::xml::*
 
-// Author: Yin
-// Last Modified: 2023/08/15
-
 fn load_js_db() -> JavascriptDB {
     return JavascriptDB::load("coref_javascript_src.db")
 }
@@ -544,6 +541,8 @@ fn queryAlertAPI(path:string, callName: string, callLoc:int, callId: int, succes
 
 
 // 查询函数和方法
+// call: 子调用
+// method: 父亲调用或方法
 fn queryFunctionAndMethod(path:string, callName: string, callLoc:int, callId: int, callType: string) -> bool {
     // that.ImgAnalyze();
     let (jsDB = load_js_db()) {
@@ -714,6 +713,25 @@ fn queryFunctionContainsCall(path:string, callName: string, callLoc:int, callId:
     //         }
     //     }
     // }
+
+    // __CALL__(__CALL__)
+    let(jsDB = load_js_db()){
+        for(mce in CallExpression::__all__(jsDB)){
+            for(ce in CallExpression::__all__(jsDB)){
+                if(path = mce.getLocation().getFile().getRelativePath() &&
+                methodLoc = mce.getLocation().getStartLineNumber() &&
+                methodName = getCallName(mce) &&
+                methodId = mce.id &&
+                ce.id = mce.getADescendant().id &&
+                callLoc = ce.getLocation().getStartLineNumber() &&
+                callName = getCallName(ce) &&
+                callId = ce.id
+                ){
+                    return 1 = 1
+                }
+            }
+        }
+    }
 }
 
 fn queryCallbackContainsCall(path:string, callName: string, callLoc:int, callId:int, methodName: string, methodLoc:int, methodId: int) -> bool {
@@ -961,6 +979,57 @@ fn queryXMLEvent(path:string, loc:int, elementId:int, eventAttrName:string, even
     }
 }
 
+// 查询XML中的import
+fn queryXMLImport(path:string, referenceFile: string) -> bool {
+    let (xmlDB = load_xml_db()) {
+        for(xe in XmlElement::__all__(xmlDB)){
+            for(attr in XmlAttribute::__all__(xmlDB)){
+                if(path = xe.getLocation().getFile().getRelativePath() && 
+                xe.getName() = "import" &&
+                attr = xe.getAttribute() &&
+                attr.getName() = "src" &&
+                referenceFile = attr.getValue()
+                ){
+                    return 1 = 1
+                }
+            }
+        }
+    }
+}
+
+// 查询XML中的template
+fn queryXMLTemplate(path: string, templateName:string, templateType: string) -> bool {
+    let (xmlDB = load_xml_db()) {
+        for(xe in XmlElement::__all__(xmlDB)){
+            for(attr in XmlAttribute::__all__(xmlDB)){
+                if(path = xe.getLocation().getFile().getRelativePath() && 
+                xe.getName() = "template" &&
+                attr = xe.getAttribute() &&
+                attr.getName() = "name" &&
+                templateType = "define" &&
+                templateName = attr.getValue()){
+                    return 1 = 1
+                }
+            }
+        }
+    }
+
+    let (xmlDB = load_xml_db()) {
+        for(xe in XmlElement::__all__(xmlDB)){
+            for(attr in XmlAttribute::__all__(xmlDB)){
+                if(path = xe.getLocation().getFile().getRelativePath() && 
+                xe.getName() = "template" &&
+                attr = xe.getAttribute() &&
+                attr.getName() = "is" &&
+                templateType = "use" &&
+                templateName = attr.getValue()){
+                    return 1 = 1
+                }
+            }
+        }
+    }
+}
+
 // 查询路由函数
 fn queryRouteAPI(path:string, loc:int, callName: string, callId:int, routeType: string, routeTarget: string, pageMethodName: string, failCallback: string) -> bool {
     let (jsDB = load_js_db()) {
@@ -1049,7 +1118,11 @@ fn main(){
     output(queryAuthorizeEvent())
     output(queryAlertAPI())
     output(queryRouteAPI())
+
     output(queryXMLEvent())
+    output(queryXMLImport())
+    output(queryXMLTemplate())
+    
     output(queryRequestAPI())
 
     output(queryFunctionAndMethod())
