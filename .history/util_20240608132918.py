@@ -869,7 +869,7 @@ def DFSFindLoop(nodes, edges, endNodeId, curNodeId, curPath, resPath, visitedNod
                     DFSFindLoop(nodes, edges, endNodeId, n, curPath, resPath, visitedNode, visitedEdge)
                     curPath.pop()
                     
-def isFailCallbackUpdateBranch(failCallback, branches):
+                    def isFailCallbackUpdateBranch(failCallback, branches):
     update = False
     for b in branches:
         if b["branchVariable"] in failCallback:

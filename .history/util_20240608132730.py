@@ -500,7 +500,7 @@ def taintSpreadByWarshall(nodes, edges, taintTypes):
     
         adjacentMatrix = tempMatrix.copy()
         
-    tqdmBarB.close()
+            tqdmBarB.close()
 
     # 返回临接矩阵运算结果（未完成）
 
@@ -691,8 +691,8 @@ def findPathFromRouteGraph(nodes, edges, start, end):
     
     formatRes = []
     
-    for i, r in enumerate(res):
-    # print("---Path: %s/%s---" % (i, len(res)))
+       for i, r in enumerate(res):
+        # print("---Path: %s/%s---" % (i, len(res)))
         formatPath = []
         for j, n in enumerate(r):
             formatPagePath = getPathByNodeId(id = n["nodeId"], nodes = nodes)
@@ -869,7 +869,7 @@ def DFSFindLoop(nodes, edges, endNodeId, curNodeId, curPath, resPath, visitedNod
                     DFSFindLoop(nodes, edges, endNodeId, n, curPath, resPath, visitedNode, visitedEdge)
                     curPath.pop()
                     
-def isFailCallbackUpdateBranch(failCallback, branches):
+                    def isFailCallbackUpdateBranch(failCallback, branches):
     update = False
     for b in branches:
         if b["branchVariable"] in failCallback:

@@ -18,20 +18,19 @@ authorizeCategoryDict = {
     "phonenumber":["my.getPhoneNumber"]
 }
 
-# official provided key: "auth_base", "auth_user"
-# self define key: "mobile", "user_name", "avatar", "cert_type", "cert_no", "person_birthday", "person_cert_expiry_date", "count", "Adress"
 scopeKeyList = [
-    "auth_base"
-]
-notRelatedKeyList = [
-    "order_service"
-]
-
-asyncFuncList = [
-    "my.confirm",
-    "post",
-    "tokenAPI"
-]
+    "auth_base", 
+    "auth_user",
+    "mobile", 
+    "user_name",
+    "avatar",
+    "cert_type", 
+    "cert_no", 
+    "person_birthday", 
+    "person_cert_expiry_date",
+    "count",
+    "Adress"
+    ]
 
 def getTransferFromVariableDeclaration(vd):
     if vd:
@@ -54,7 +53,6 @@ def getRelativePath(path1, path2):
         return path2 if ".js" in path2 else path2 + ".js"
 
     path2 = path2.replace("'","").replace("\\","").replace('"',"")
-    # print(path2)
     if "./" in path2 and "../" not in path2:
         path2 = path2.replace("./","../")
     if "../" not in os.path.join(path1, path2):
@@ -63,6 +61,12 @@ def getRelativePath(path1, path2):
         return path2.replace("../", "")
     else:
         return os.path.relpath(os.path.join(path1, "../" + path2))
+
+# print(getRelativePath("pages/arrears/arrears.js", "'../common/http.js'"))
+# print(getRelativePath("utils/base.js", "'/utils/api.js'"))
+# print(getRelativePath("pages/index/index.js", "'../../utils/api.js'"))
+# print(getRelativePath("pages/xym/schoolDetailInfoAll/infoSchoolDetail/index.js", "'/utils/xym'"))
+# print(getRelativePath("app.js",'./pages/common/auth.js'))
 
 def findCallIdByPathAndName(nodes, path, name):
     Id = []
@@ -90,12 +94,11 @@ def findModuleFunctionName(importName, exportReferences):
 def findDefineIdByPathAndName(funcNodes, funcPath, funcName):
     Id = []
     for fn in funcNodes:
-        # print(funcName , funcPath, fn)
         # 由于pages中的函数引用与一般js文件中的引用方式不同
         # 如果是pages文件->Page对象中定义的函数一定要用this或者转移赋值后的this来调用
-        if not "pages" in fn["path"] and fn["path"] == funcPath and fn["callType"] == "define" and fn["callName"] == str(funcName):
+        if not "pages" in fn["path"] and fn["path"] == funcPath and fn["callType"] == "define" and fn["callName"] == funcName:
             Id.append(fn["callId"])
-        elif "this" in str(funcName) and fn["callType"] == "define" and fn["path"] == funcPath and fn["callName"] == str(funcName).replace("this.",""):
+        elif "this" in funcName and fn["callType"] == "define" and fn["path"] == funcPath and fn["callName"] == funcName.replace("this.",""):
             Id.append(fn["callId"])
     # if funcName == "this.initCity":
     #     print("[DEBUG]", Id)
@@ -116,7 +119,7 @@ def findImortIdByName(importPath, funcNodes, funcName, impReference):
 def getNodeInfosByCallIdList(nodeIdList, nodes):
     infos = []
     for n in nodeIdList:
-        node = getNodeByCallId(id = n , nodes = nodes)
+        node = getNodeByCallId(id = n , nodes= nodes)
         infos.append({
             "callId": node["callId"],
             "callName": node["callName"],
@@ -129,26 +132,9 @@ def getNodeInfosByCallIdList(nodeIdList, nodes):
         })
     return infos
 
-def getDifferentCallNumber(callList, callNodes):
-    # 互相存在调用的删去
-    # cParent <- cChild, 只视cParent为一个
-    rmIndex = []
-    for cParentIndex, cParent in enumerate(callList):
-        cParentTaintedBy = getNodeByCallId(id = cParent["callId"], nodes = callNodes)["authorizeTaintedBy"]
-        
-        for cChildIndex, cChild in enumerate(callList):
-            if not cParent["callId"] == cChild["callId"] and cChild["callId"] in cParentTaintedBy:
-                rmIndex.append(cChildIndex)
-    
-    rmCallList = []
-    for cParentIndex, cParent in enumerate(callList):
-        if cParentIndex not in rmIndex:
-            rmCallList.append(cParent)
-
-    # print("DEBUG", rmCallList)
-    
+def getDifferentCallNumber(callList):
     dfCallMethod = []
-    for c in rmCallList:
+    for c in callList:
         # 同类API只计算一次
         cCategory = ""
         for cateKey in authorizeCategoryDict.keys():
@@ -162,8 +148,6 @@ def getDifferentCallNumber(callList, callNodes):
         if not cCategory:
             if c["eventOpenType"] == "getAuthorize" and not "auth" in dfCallMethod and c["callName"] not in dfCallMethod:
                 dfCallMethod.append(c["callName"])
-    
-    # print("DEBUG", dfCallMethod)
  
     return len(dfCallMethod)
 
@@ -190,7 +174,8 @@ def getAuthorizeCategoryByCallName(callName):
     
     return "none"
 
-def buildFunctionReference(queryResult, absolutePath, exceptFileList = []):
+
+def buildFunctionReference(queryResult, exceptFileList = []):
     funcReferences = queryResult["queryFunctionContainsCall"]
     thisReferences = queryResult["queryThisKeywordRelatedCall"]
     expReferences = queryResult["queryExport"]
@@ -255,16 +240,7 @@ def buildFunctionReference(queryResult, absolutePath, exceptFileList = []):
     tqdmBar.set_description("* Import and Export Reference")
     for ir in impReferences:
         tqdmBar.update(1)
-        # 转换目录格式
         importPath = getRelativePath(ir["path"],ir["importPath"])
-        # ES6特性：如果import语句引入了一个文件夹，则默认引入它目录下的index.js文件
-        # 判断目录是文件夹还是文件
-        importAbsolutePath = os.path.join(absolutePath, importPath)
-        # print(importAbsolutePath)
-
-        if os.path.isdir(importAbsolutePath):
-            importPath = importPath + "/index.js"
-        
         # print("[DEBUG]",ir["path"], importPath, ir["importMethod"])
         # 尝试寻找同名定义
         importFunctionInModuleIds = findDefineIdByPathAndName(funcNodes=funcNodes, funcPath=importPath, funcName=ir["importMethod"])
@@ -283,8 +259,7 @@ def buildFunctionReference(queryResult, absolutePath, exceptFileList = []):
                 })
 
                 funcEdgeCounter["module"] += 1
-                
-                        # 没有找到同名定义，查看是否为export default，可对方法重命名型导入
+        # 没有找到同名定义，查看是否为export default，可对方法重命名型导入
         isExportDefault, exportDefindIds = getExportDefaultDefineId(exportReferences=expReferences, funcPath=importPath, funcNodes=funcNodes)
         # if ir["importMethod"] == "auth":
         #     print("--->",isExportDefault, exportDefindIds)
@@ -314,7 +289,6 @@ def buildFunctionReference(queryResult, absolutePath, exceptFileList = []):
 
                     funcEdgeCounter["module"] += 1
 
-    tqdmBar.set_description("* Global Object Reference")
     for ar in appReferences:
         tqdmBar.update(1)
         appFunctionCallProperty = ar["callName"].replace("app.", "")
@@ -327,7 +301,6 @@ def buildFunctionReference(queryResult, absolutePath, exceptFileList = []):
                     "to": ar["callId"],
                     "edgeId": len(funcEdges)
                 })
-                # print("[DEBUG]", appFunctionCallProperty, appFunctionDefineId, ar["callId"])
 
                 funcEdgeCounter["getApp"] += 1
 
@@ -351,7 +324,7 @@ def getEdgeById(id, edges):
     for e in edges:
         if e["edgeId"] == id:
             return e
-        
+
 def getNodeByCallId(id, nodes):
     for n in nodes:
         if n["callId"] == id:
@@ -391,10 +364,10 @@ def getPagePathByNodeId(id, pageNodes):
 #     print("* Update graph relation info ...")
 
 def taintSpread(nodes, edges, taintTypes):
-    print("* Taint Spread ｜ ...")
+    print("* Taint Spread...")
 
     tqdmBar = tqdm.tqdm(total = len(nodes) + len(edges) + len(nodes) * len(taintTypes))
-    tqdmBar.set_description("* Taint Spread ｜ Initialize:")
+    tqdmBar.set_description("* Taint Spread Initialize:")
 
     # 初始化
     for n in nodes:
@@ -417,17 +390,11 @@ def taintSpread(nodes, edges, taintTypes):
         keyTaintedBy = tt + "TaintedBy"
         keyTaintedRoot = tt + "TaintedRoot"
 
-        tqdmBar.set_description("* Taint Spread ｜ Process %s:" % keyTainted)
+        tqdmBar.set_description("* Taint Spread %s:" % keyTainted)
 
         for n in nodes:
             tqdmBar.update(1)
-            elapsedTime = tqdmBar.format_dict["elapsed"]
-            rate = tqdmBar.format_dict["rate"]
-            remainingTime = (tqdmBar.total - tqdmBar.n) / rate if rate and tqdmBar.total else 0
 
-            # if remainingTime > 60 * 30:
-            #     raise RuntimeError("Time Cost > 30 min.")
-            
             if n[keyTainted]:
                 # print("begin node at", n)
                 waitForVisitEdgeIdList = n["edgesFromThisNode"]
@@ -460,7 +427,6 @@ def taintSpread(nodes, edges, taintTypes):
                 # print("end node")
     print("* Taint Finished.")
     tqdmBar.close()
-
     return nodes
 
 
@@ -499,7 +465,7 @@ def taintSpreadByWarshall(nodes, edges, taintTypes):
                 tempMatrix[i][j] = adjacentMatrix[i][j] | (adjacentMatrix[i][k] & adjacentMatrix[k][j])
     
         adjacentMatrix = tempMatrix.copy()
-        
+
     tqdmBarB.close()
 
     # 返回临接矩阵运算结果（未完成）
@@ -560,22 +526,17 @@ def formatNodesAndEdges(nodes, edges):
     return new_nodes, new_edges
 
 # XML事件和Js函数节点绑定
-def getEventNode(nodes, events, eventRef):
+def getEventNode(nodes, events):
     for n in nodes:
         n["event"] = None
-    
-    # 直接调用
+
+    # 同名路径，事件名和属性名相对应
     for n in nodes:
         for e in events:
             if e["path"] == n["path"].replace(".js", ".axml") and e["eventAttrValue"] == n["callName"]:
                 n["event"] = e
-            
-    # 通过template引入的
-    for n in nodes:
-        for ref in eventRef:
-            if ref["callName"] == n["callName"] and ref["pagePath"] == n["path"]:
-                n["event"] = ref["sourceEvent"]
     
+
     return nodes
 
 
@@ -614,16 +575,10 @@ def buildPageReference(nodeInfo, edgeInfo):
                         "event": e["pageMethodName"],
                         "edgeId": len(edges)
                     })
-
-    # for e in edges:
-    #     print("[DEBUGe]", e)
     return nodes, edges
 
 # 从route URL中抽取路径和参数
 def getPathFromUrlString(curPath, inputUrlStr):
-    # print("[DEBUG]", curPath, inputUrlStr)
-    if inputUrlStr == "undefine":
-        return "", ""
     urlPath = inputUrlStr.split(":")[1].replace(" ","").replace("`","").replace("+","").replace("'","")
     if urlPath[0] == "/":
         urlPath = urlPath[1:]
@@ -690,9 +645,8 @@ def findPathFromRouteGraph(nodes, edges, start, end):
                          visitedEdge=[])
     
     formatRes = []
-    
     for i, r in enumerate(res):
-    # print("---Path: %s/%s---" % (i, len(res)))
+        # print("---Path: %s/%s---" % (i, len(res)))
         formatPath = []
         for j, n in enumerate(r):
             formatPagePath = getPathByNodeId(id = n["nodeId"], nodes = nodes)
@@ -751,39 +705,18 @@ def DFSFindPath(nodes, edges, endPath, curNodeId, curEdgeId, curPath, resPath, v
 
 # 更新节点的分支信息
 def updateBranchInfo(queryResult):
-    print("Update branch info...")
     nodes = queryResult["queryFunctionAndMethod"]
     branchInfos = queryResult["queryBranchAndCondition"]
-
-    # 直接进行nodes * branchInfos对比耗时过长
-    # 选择首先按callId进行分组，然后赋值给nodes
-    branchInfoInNodes = {}
-    for bi in branchInfos:
-        if bi["callId"] not in branchInfoInNodes:
-            branchInfoInNodes[bi["callId"]] = []
-
-        branchInfoInNodes[bi["callId"]].append({
-            "branchLoc": bi["branchLoc"],
-            "branchCondition": bi["branchCondition"],
-            "branchVariable": bi["branchVariable"]
-        })
-
     for n in nodes:
         n["branch"] = []
-        if n["callId"] in branchInfoInNodes:
-            n["branch"] = branchInfoInNodes[n["callId"] ]
-            
-                # for n in nodes:
-    #     n["branch"] = []
-
-    # for n in nodes:
-    #     for bi in branchInfos:
-    #         if n["callId"] == bi["callId"]:
-    #             n["branch"].append({
-    #                 "branchLoc": bi["branchLoc"],
-    #                 "branchCondition": bi["branchCondition"],
-    #                 "branchVariable": bi["branchVariable"]
-    #             })
+    for n in nodes:
+        for bi in branchInfos:
+            if n["callId"] == bi["callId"]:
+                n["branch"].append({
+                    "branchLoc": bi["branchLoc"],
+                    "branchCondition": bi["branchCondition"],
+                    "branchVariable": bi["branchVariable"]
+                })
     return nodes
 
 
@@ -868,7 +801,7 @@ def DFSFindLoop(nodes, edges, endNodeId, curNodeId, curPath, resPath, visitedNod
                     })
                     DFSFindLoop(nodes, edges, endNodeId, n, curPath, resPath, visitedNode, visitedEdge)
                     curPath.pop()
-                    
+
 def isFailCallbackUpdateBranch(failCallback, branches):
     update = False
     for b in branches:
@@ -883,106 +816,20 @@ def isInSamePage(jsfilePath, xmlfilePath):
     return False
 
 
-def getAuthUnofficialScopeNum(authAPICallID, queryResult):
-    # 获取getAuthCode的scope中非官方字段的数量
-    authAPIScope = []
+
+def getAuthScope(queryResult):
+    authScope = []
+    possibleScope = []
+
     for authAPI in queryResult["queryAuthorizeAPI"]:
-        if authAPI["callId"] == authAPICallID and not authAPI["scope"] == "NO_SCOPE":
-            try:
-                authAPIScopeText = re.sub("[\'\"(\)]", "", authAPI["scope"])
-                authAPIScope = authAPIScopeText.split(",")
-            except Exception as e:
-                print("Auth Scope Text Process Error.")
-
-            if authAPIScope:
-                for officialScopeKey in scopeKeyList:
-                    if officialScopeKey in authAPIScope:
-                        authAPIScope.remove(officialScopeKey)
-                
-                for unofficialScopeKey in notRelatedKeyList:
-                    if unofficialScopeKey in authAPIScope:
-                        authAPIScope.remove(unofficialScopeKey)
-
-    # 部分节点可能在传递过程中使用形参的方式传值
-    # 这里采用粗略过滤的方式对节点再扫一遍
-    if len(authAPIScope) == 0:
-        for n in queryResult["queryFunctionAndMethod"]:
-            if "scopes" in n["callName"] and "auth_user" in n["callName"] and "auth_user" not in authAPIScope:
-                authAPIScope.append("auth_user")
-
-    # 如果只有auth_user关键字，只会影响openuserinfo而不会影响getphonenumber
-    onlyAuthUser = False
-    if len(authAPIScope) == 0 or (len(authAPIScope) == 1 and "auth_user" in authAPIScope):
-        onlyAuthUser = True
-    # print(len(authAPIScope))
-    return len(authAPIScope), onlyAuthUser
-
-def getTemplateDefineFile(templateUse, queryResult):
-    # 获取xml引用中template属性的定义来源文件
-    for tmd in queryResult["queryXMLTemplate"]:
-        if tmd["templateType"] == "define" and templateUse["templateName"] == tmd["templateName"]:
-            for tmref in queryResult["queryXMLImport"]:
-                # print(tmref["path"], getRelativePath(tmref["path"], tmref["referenceFile"]))
-                if tmref["path"] == templateUse["path"]:
-                    # 待解决：引用可能存在相对目录
-                    return tmd["path"]
+        for scopeKey in scopeKeyList:
+            if scopeKey in authAPI["scope"] and scopeKey not in authScope:
+                authScope.append(scopeKey)
     
-    return ""
+    for call in queryResult["queryFunctionAndMethod"]:
+        for scopeKey in scopeKeyList:
+            if scopeKey in call["callName"] and "scopes" in call["callName"] and scopeKey not in possibleScope:
+                possibleScope.append(scopeKey)
 
-def addPopupInfoToList(value, toList):
-    # 向列表中添加信息
-    if str(value) not in str(toList):
-        toList.append(value)
-    
-    return toList
-
-def getAPIInvokeInfluenceBranch(invokeAPINode, branchList, nodeList):
-    # 判断API节点的执行是否会影响条件列表里面的变量
-    influenceFlag = False
-    for branch in branchList:
-        for atb in invokeAPINode["authorizeTaintedBy"]:
-            # print(getNodeByCallId(atb, nodeList))
-            if branch["branchVariable"] in getNodeByCallId(atb, nodeList)["successCallback"]:
-                influenceFlag = True
-    
-    return influenceFlag
-
-def getPerformTraceNodes(endNode, nodes, edges):
-    # 获得一个节点的执行路径上的所有节点
-    performNode = [endNode]
-    waitForCheckNode = [endNode]
-    existCheckNodeIds = []
-    while waitForCheckNode:
-        checkNode = waitForCheckNode.pop()
-        for e in checkNode["edgesToThisNode"]:
-            enode = getEdgeById(id = e, edges = edges)
-            fromNode = getNodeByCallId(id = enode["from"], nodes = nodes)
-
-            if not fromNode["callId"] in existCheckNodeIds:
-                existCheckNodeIds.append(fromNode["callId"])
-
-                performNode.append(fromNode)
-                waitForCheckNode.append(fromNode)
-
-    return performNode
-  
-def existAsyncFunction(invokeAPINode, nodes, edges, qnodes):
-    # 判断执行API的执行序列中是否有异步函数
-
-    deepNodes = getPerformTraceNodes(endNode=invokeAPINode, nodes = nodes, edges = edges)
-    for dn in deepNodes:
-        for asyncFunc in asyncFuncList:
-            if asyncFunc in dn["callName"]:
-                return True
-    
-    for qnode in qnodes:
-        for asyncFunc in asyncFuncList:
-            if invokeAPINode["callId"] == qnode and asyncFunc in invokeAPINode["methodName"]:
-                return True
-
-    # print("---")     
-    # print(invokeAPINode)
-    # for n in deepNodes:
-    #     print(n["callName"])
+    return authScope, possibleScope
             
-    return False
