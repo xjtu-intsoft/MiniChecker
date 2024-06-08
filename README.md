@@ -1,6 +1,6 @@
 # MiniChecker
 
-MiniChecker is a tool for detecting abusive data permission request (ADPR) behaviors in mini-programs.
+MiniChecker is a tool for detecting abusive data permission request behaviors in mini-programs.
 
 We implented MiniChecker base on *Codefuse-Query*  (from [Code-Fuse] github.codefuse-ai.CodeFuse-Query).
 
