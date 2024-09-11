@@ -1,41 +1,39 @@
 # MiniChecker
 
-MiniChecker is a tool for detecting abusive data permission request behaviors in mini-programs.
-
-We implented MiniChecker base on *Codefuse-Query*  (from [Code-Fuse] github.codefuse-ai.CodeFuse-Query).
+MiniChecker is a tool for detecting abusive data permission request behaviors in mini-programs, which is implented MiniChecker base on [Codefuse-Query](https://github.com/codefuse-ai/CodeFuse-Query). This work has been accepted by 39th IEEE/ACM International Conference on Automated Software Engineering (ASE 2024). For more implementation details, please refer to our paper.
 
 ## Table of contents
 
-- [Dependency](#dependency)
-- [Structure](#structure)
-- [Benchmark](#benchmark)
-- [Usage](#usage)
-- [Example](#example)
-- [License](#license)
+- [MiniChecker](#minichecker)
+  - [Table of contents](#table-of-contents)
+  - [Environment](#environment)
+  - [Structure](#structure)
+  - [Benchmark](#benchmark)
+  - [Usage](#usage)
+  - [Example](#example)
+  - [Citation](#citation)
 
-## Dependency
-* Java 8 for *Sparrow* 
-* *Sparrow* (local version or server version)
+## Environment
+* Java 8 for Codefuse-Query
+* Codefuse-Query (local version or server version)
 * Python 3.9.6
 
 ## Structure
-* compare: comparative experiment
-* benchmark.zip: benchmark cases for four ADPR risks
-* basic-query.gdl:  main script using *Sparrow* to query code information
+* compare: comparative experiment code
+* basic-query.gdl:  main script using *Codefuse-Query* to query code information
 * checker-local.py: main script using *Python* to compute and match the features of different risks
 * util.py: self-defined library function
 * checker-patch.py: script for patch analsis
-
-**We have actively worked towards making *MiniChecker* publicly available to enhance the reusability of our artifacts. However, due to confidentiality constraints imposed by some of the platforms we collaborate with, the full content of benchmark codes are not allowed to be disclosed. We have tried our best to enhance the availability of our artifact and give representative sample codes for each abusive permission request issue. **
+* benchmark.zip: benchmark cases for abusive permission request risks. 
 
 ## Benchmark
 
-Due to data security limitations, we have desensitized the analyzed data and integrated the risk behavior fragment code into the following basic code fragment.
+> Note: We have actively made efforts to make *MiniChecker* publicly accessible to improve the reusability of our artifacts. However, due to confidentiality constraints imposed by some of the platforms we collaborate with, the full content of benchmark codes are not allowed to be disclosed. We have tried our best to enhance the availability of our artifact, desensitized the analyzed data and integrated the risk behavior fragment code into the following basic code fragment.
 
-* overlay/single1: Simple example, loading two APIs simultaneously in the lifecycle function launched by app. js
+* overlay/single1: Simple example, loading two APIs simultaneously in the lifecycle function launched by app.js
 * overlay/single2: Simple example, loading two APIs simultaneously in the lifecycle function launched on the page
 * overlay/lifecycle1: Complex example, loading two APIs separately in different lifecycle functions on the page
-* overlay/lifecycle2: Complex example, loading one at app. js startup and one at page startup, with an import introduction module
+* overlay/lifecycle2: Complex example, loading one at app.js startup and one at page startup, with an import introduction module
 * bother/no-condition: Simple example, determining the condition without a state before calling the API
 * bother/no-fail-callback: Simple example, no failure callback after calling the API
 * bother/no-update: Simple example, a failed callback to the API does not affect the result of conditional judgment
@@ -50,68 +48,68 @@ Due to data security limitations, we have desensitized the analyzed data and int
 
 ## Usage
 
-### Step 1: Create the database using *Sparrow* tool
+**Step 1: Create the database using *CodeFuse* tool**
 
 **Command execution**
 
-`$SparrowPath $database create - t=JavaScript, XML - s=$PackageSource Dir $- log=ALL $Database OutputDir$`
+```bash
+$CodeFusePath database create -t=JavaScript,XML -s=$PackageSource Dir $-log=ALL $DatabaseOutputDir
+```
 
 **Parameter Introduction**
 
-* $SparrowPath$: The address of the Sparrow tool, such as "/$workpath/sparrow-li-server/sparrow"
+* `CodeFusePath`: The address of the CodeFuse tool, such as `/workpath/CodeFuse-cli-server/CodeFuse`
 
-* $PackageSourceDir$: The directory of the mini program source code, such as "/$workpath/data/$miniprogramname/dist"
+* `PackageSourceDir`: The directory of the mini program source code, such as `/workpath/data/$miniprogramname/dist`
 
-* $DatabaseOutputDir$: Output the directory where the database is stored, such as "/$workpath/data/$miniprogramname/db"
+* `DatabaseOutputDir`: Output the directory where the database is stored, such as `/workpath/data/$miniprogramname/db`
 
-**Remarks**
+> During the analysis process, in addition to analyzing the JavaScript code, the analysis and construction function of XML was also used. Losing this part of the database can cause query errors.
 
-* During the analysis process, in addition to analyzing the JavaScript code, the analysis and construction function of XML was also used. Losing this part of the database can cause query errors.
-
-* When building the database, it is possible to exclude nodes as needed_ Modules and other irrelevant libraries reduce the size of the database to accelerate analysis.
+> When building the database, it is possible to exclude nodes as needed_ Modules and other irrelevant libraries reduce the size of the database to accelerate analysis.
 
 
 
-### Step 2: Query basic information using *Sparrow* and mini-program database
+**Step 2: Query basic information using *CodeFuse* and mini-program database**
 
 **Command execution**
 
-`$SparrowPath $query run - d=$DatabaseOutputDir $- f=json - o $QueryResultOutputDir $$QueryScriptPath$`
+```bash
+$CodeFusePath query run -d=$DatabaseOutputDir -f=json -o $QueryResultOutputDir $QueryScriptPath
+```
 
 **Parameter Introduction**
 
-* $SparrowPath$: The address of the Sparrow tool
+* `CodeFusePath`: The address of the CodeFuse tool
 
-* $DatabaseOutputDir$: The directory where the output database is stored
+* `DatabaseOutputDir`: The directory where the output database is stored
 
-* $QueryResultOutputDir$: The address to output the query result, such as "/$workpath/data/$miniprogramname/output"
+* `QueryResultOutputDir`: The address to output the query result, such as `/workpath/data/$miniprogramname/output`
 
-* $QueryScriptPath$: Query script address, such as "/$workpath/script/basic-query.gdl"
+* `QueryScriptPath`: Query script address, such as `/$workpath/script/basic-query.gdl`
 
 
-### Step 3: Run *MiniChecker* to detect ADPR risks
+**Step 3: Run *MiniChecker* to detect abusive permission request risks**
 
 **Command execution**
 
-`$PythonPath $AnalyzeScriptPath $PackageSourceDir $SavePath$`
+```bash
+$PythonPath $AnalyzeScriptPath $PackageSourceDir $SavePath$
+```
 
-* $PythonPath$: The address of a Python tool, such as "/$workpath/bin/Python"
+* `PythonPath`: The address of a Python tool, such as `/$workpath/bin/Python`
 
-* $AnalyzeScriptPath$: The address of the analysis script, such as /$workpath/script/checker-local.py"
+* `AnalyzeScriptPath`: The address of the analysis script, such as `/workpath/script/checker-local.py`
 
-* $PackageSourceDir$: The address of the mini-program directory
+* `PackageSourceDir`: The address of the mini-program directory
 
-* $SavePath$: The address where the risk results are stored
+* `SavePath`: The address where the risk results are stored
 
-**Remarks**
-
-This step connects to the script query results. To run the local version (checker-local.py), it is necessary to obtain information from the app.json directory in the mini program directory, so the mini program directory address needs to be entered. 
+> This step connects to the script query results. To run the local version, it is necessary to obtain information from the `app.json` directory in the mini program directory, so the mini-program directory address needs to be entered. 
 
 
 
 ## Example
-
-**Output results**
 
 ```
 {
@@ -159,7 +157,9 @@ This step connects to the script query results. To run the local version (checke
 
 ```
 
-## License
 
+## Citation
+
+If you find MiniChecker useful, please consider citing our paper :)
 
   
